@@ -1,0 +1,111 @@
+# /etc/bashrc
+
+# System wide functions and aliases
+# Environment stuff goes in /etc/profile
+
+# By default, we want this to get set.
+# Even for non-interactive, non-login shells.
+if [ $UID -gt 99 ] && [ "`id -gn`" = "`id -un`" ]; then
+	umask 002
+else
+	umask 022
+fi
+
+# are we an interactive shell?
+if [ "$PS1" ]; then
+    case $TERM in
+	xterm*)
+		if [ -e /etc/sysconfig/bash-prompt-xterm ]; then
+			PROMPT_COMMAND=/etc/sysconfig/bash-prompt-xterm
+		else
+	    	PROMPT_COMMAND='echo -ne "\033]0;${USER}@${HOSTNAME%%.*}:${PWD/#$HOME/~}"; echo -ne "\007"'
+		fi
+		;;
+	screen)
+		if [ -e /etc/sysconfig/bash-prompt-screen ]; then
+			PROMPT_COMMAND=/etc/sysconfig/bash-prompt-screen
+		else
+		PROMPT_COMMAND='echo -ne "\033_${USER}@${HOSTNAME%%.*}:${PWD/#$HOME/~}"; echo -ne "\033\\"'
+		fi
+		;;
+	*)
+		[ -e /etc/sysconfig/bash-prompt-default ] && PROMPT_COMMAND=/etc/sysconfig/bash-prompt-default
+	    ;;
+    esac
+    # Turn on checkwinsize
+    shopt -s checkwinsize
+    [ "$PS1" = "\\s-\\v\\\$ " ] && PS1="[\u@\h \W]\\$ "
+fi
+
+if ! shopt -q login_shell ; then # We're not a login shell
+	# Need to redefine pathmunge, it get's undefined at the end of /etc/profile
+    pathmunge () {
+		if ! echo $PATH | /bin/egrep -q "(^|:)$1($|:)" ; then
+			if [ "$2" = "after" ] ; then
+				PATH=$PATH:$1
+			else
+				PATH=$1:$PATH
+			fi
+		fi
+	}
+
+	# Only display echos from profile.d scripts if we are no login shell
+    # and interactive - otherwise just process them to set envvars
+    for i in /etc/profile.d/*.sh; do
+        if [ -r "$i" ]; then
+            if [ "$PS1" ]; then
+                . $i
+            else
+                . $i >/dev/null 2>&1
+            fi
+        fi
+    done
+
+	unset i
+	unset pathmunge
+fi
+################################################################
+# Program :
+#	This program is used to register the licenses and paths 
+# History:
+#	2017/02/08	QiuChao First Release
+################################################################
+#### ==== Licenses and PATH register Begin
+#### Export SoftWare Home
+export QUESTA_HOME=/opt/tool/mentor/questasim10_2b/questasim
+export QUARTUS10_0_HOME=/opt/tool/altera/quartus11_0/quartus
+export NOVAS_HOME=/opt/tool/novas/verdi3_201403
+export VIVADO_HOME=/opt/tool/xilinx/vivado2016_02/Vivado/2016.2
+export SCRIPT_HOME=/home/logic/source_tool/script_tool
+export LICENSE_HOME=/home/logic/source_tool/all_license_file_11
+export SCL_HOME=/opt/tool/synopsys/scl11_9
+#### Export LICENSE FILE 
+export MSIM_LICFILE=sim_benz_license_00-26-5a-13-1c-e1.dat
+export VERDI_LICFILE=synopsys_benz_bc305bb82ebb.dat
+export VIVADO_LICFILE=vivadohls.lic
+#### Export PATH 
+export PATH=$PATH:/usr/sbin:/sbin:/usr/local/bin:\
+${QUESTA_HOME}/linux_x86_64:\
+${NOVAS_HOME}/bin:\
+${NOVAS_HOME}/platform/LINUX/bin:\
+${VIVADO_HOME}/bin:\
+${QUARTUS10_0_HOME}/bin:\
+${SCRIPT_HOME}
+#### Export LD_LIBRARY_PATH using by vsim and verdi 
+export LD_LIBRARY_PATH=${NOVAS_HOME}/share/PLI/MODELSIM/LINUXAMD64
+export LD_LIBRARY_PATH=libpli:${LD_LIBRARY_PATH}
+#### Export LM_LICENSE_FILE 
+export LM_LICENSE_FILE=${LICENSE_HOME}/questasim_license/${MSIM_LICFILE}:\
+${LICENSE_HOME}/novas_license/${VERDI_LICFILE}:\
+${LICENSE_HOME}/xilinx_license/${VIVADO_LICFILE}
+#### Alias  
+alias verdi3_201403_lmgrd="${SCL_HOME}/linux/bin/lmgrd -C ${LICENSE_HOME}/novas_license/${VERDI_LICFILE} -l ${LICENSE_HOME}/novas_license/synopsys.log"
+#### Others
+export XILINX_VIVADO=${VIVADO_HOME}/
+#### Abandonment 
+#alias verdi3_201210_lmgrd='/opt/tool/novas/verdi3_201210/bin/lmgrd -C /home/logic/source_tool/all_license_file_11/novas_license/verdi3_benz_license.dat'
+#export LD_LIBRARY_PATH=${NOVAS_HOME}/share/PLI/MODELSIM/LINUX64
+##export LD_LIBRARY_PATH=/usr/local/microsemi/Libero_v11.7/Libero/bin:${LD_LIBRARY_PATH}
+## ==== Licenses and PATH register End 
+################################################################
+
